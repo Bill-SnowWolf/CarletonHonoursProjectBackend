@@ -1,10 +1,11 @@
 class UsersController < ApplicationController
-  before_action :set_user, only: [:show, :edit, :update, :destroy]
+  before_action :set_user, only: [:show, :edit, :update, :destroy, :online, :offline]
 
   # GET /users
   # GET /users.json
   def index
-    @users = User.all
+    @users = User.where(:status => "online")
+    @user = current_user
   end
 
   # GET /users/1
@@ -60,6 +61,21 @@ class UsersController < ApplicationController
       format.json { head :no_content }
     end
   end
+  
+  # GET /users/online
+  def online
+    @user.update_attributes(:status => "online")    
+  end
+
+  # GET /users/offline
+  def offline
+    @user.update_attributes(:status => "offline")    
+    respond_to do |format|
+      format.html { redirect_to users_url }
+      format.json { head :no_content }
+    end
+  end
+
 
   private
     # Use callbacks to share common setup or constraints between actions.

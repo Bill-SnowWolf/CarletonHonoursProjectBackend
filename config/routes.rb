@@ -1,7 +1,12 @@
 Rails.application.routes.draw do
 
   devise_for :users
-  resources :users
+  resources :users do 
+    member do 
+      get 'online'
+      get 'offline'
+    end
+  end
 
   # Pusher Authentication
   post '/pusher/auth' => 'pusher#auth'
