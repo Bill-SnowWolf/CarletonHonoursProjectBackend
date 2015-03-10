@@ -45,3 +45,6 @@ gem 'devise', '3.2.2'
 gem 'delayed_job'
 gem 'delayed_job_active_record'
 gem 'daemons'
+
+# Pusher
+gem 'pusher'

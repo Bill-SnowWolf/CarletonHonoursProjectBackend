@@ -5,10 +5,14 @@
   <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
   <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
   <%= csrf_meta_tags %>
+  <script src="//js.pusher.com/2.2/pusher.min.js"></script>
 </head>
 <body>
 
-<%= yield %>
+  <!-- For JS Easy Access to Pusher Key -->
+  <div data-api-key="<%= Pusher.key %>" id="chat"></div>
+
+  <%= yield %>
 
 </body>
 </html>
