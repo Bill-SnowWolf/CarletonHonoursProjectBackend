@@ -31,3 +31,53 @@
 <% end %>
 
 <%= link_to 'New User', new_user_path %>
+
+<a href="/users/sign_out" data-method="delete" rel="nofollow">Log Out</a>
+
+<script type="text/javascript">
+
+$(function() {
+  var key = "<%= Pusher.key %>"
+  var currentUser = {
+    id: "<%= @user.id %>",
+    name: "<%= @user.name %>"
+  }
+  var pusher = new Pusher(key, {
+    auth: {
+      params: currentUser
+    }
+  });
+  // var pusher = new Pusher(key, {
+  //   auth: {
+  //     params: {
+  //       id: "Manager"
+  //     }
+  //   }
+  // });
+
+  var channel = pusher.subscribe('presence-lobby');
+
+  channel.bind('pusher:subscription_succeeded', function() {
+    console.log("Subscription Succeeded.");
+
+    channel.members.each(function(member) {
+      console.log(member.id + " " + member.info.name + " is in this lobby.");      
+    });
+    // for (var userId in channel.members.members) {
+    //   // if (userId != currentUser.id) {
+    //     var member = channel.members.members[userId];
+    //     console.log(member + " is in this lobby.");
+    //   // }
+    // }
+  });
+
+  channel.bind('pusher:member_added', function(member) {
+    console.log(member.id + " " + member.info.name + " joined lobby.");      
+  });
+
+  channel.bind('pusher:member_removed', function(member) {
+    console.log(member.id + " " + member.info.name + " left this lobby.");      
+  });
+});
+
+</script>

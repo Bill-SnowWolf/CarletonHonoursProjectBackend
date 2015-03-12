@@ -2,7 +2,9 @@ class PusherController < ApplicationController
     protect_from_forgery except: :auth
 
   def auth
-    response = Pusher['private-test'].authenticate(params[:socket_id])
+    response = Pusher[params[:channel_name]].authenticate(params[:socket_id],
+      user_id: params[:id],
+      user_info: { name: params[:name] })
 
     render json: response
   end
