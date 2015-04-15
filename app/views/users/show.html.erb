@@ -109,18 +109,13 @@ $(function() {
     peerConnection.addStream(localStream);  // 2.
     peerConnection.onicecandidate = gotLocalIceCandidate;
     peerConnection.onaddstream = gotRemoteStream;
+    peerConnection.oniceconnectionstatechange = iceConnectionStateChanged;    
   }
 
   var pusher;
   var channel; 
   var initialator = false;
   var room_number = "<%= @user.id %>";
-
-  function start() {
-    startButton.disabled = true;    
-    navigator.getUserMedia({video:false, audio: true}, gotStream, function(error) {
-      trace('navigator.getUserMedia error: ', error);
-    });
 
     pusher = new Pusher($('#pusher_data').data().apiKey, {
       authEndpoint: $('#pusher_data').data().authEndpoint,
@@ -138,31 +133,37 @@ $(function() {
       channel.bind("client-offer", offerReceived); // Callee
       channel.bind("client-answer", answerReceived); // Caller
       channel.bind("client-icecandidate", iceCandidateReceived);
-      channel.bind("client-finished", function() {
-
-      });
     });
+
+
+  function start() {
+    lobby.available();
+    startButton.disabled = true;    
+    navigator.getUserMedia({video:false, audio: true}, gotStream, function(error) {
+      trace('navigator.getUserMedia error: ', error);
+    });
+
+    
 
 
   }
 
   function call() { // Caller
-    // callButton.disabled = true;
-    // hangupButton.disabled = false;
     console.log('Starting call');    
     peerConnection.createOffer(gotLocalDescription);  // 3.
   }
 
   function hangup() {
-    trace('Ending call');
-    localPC.hangup();
-    remotePC.hangup();
-    hangupButton.disabled = true;
-    callButton.disabled = false;
+    peerConnection.close();
+    // peerConnection = undefined;
+    // remoteVideo.src = undefined;
+    start();
   }
 
   // Pushter Channel Callbacks
   function offerReceived(offer) {   // Callee
+    lobby.busy();
+
     console.log("Offer Received: " + offer.sdp);
     peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
     peerConnection.createAnswer(gotRemoteDescription);
@@ -177,11 +178,18 @@ $(function() {
     console.log("Ice Candidate Receivced: " + data.candidate);
      var candidate = new RTCIceCandidate({
       candidate: data.candidate,
-      sdpMLineIndex:  data.sdpMLineIndex
+      sdpMLineIndex: data.sdpMLineIndex
     });
     peerConnection.addIceCandidate(new RTCIceCandidate(candidate));    
   }
 
+  function iceConnectionStateChanged() {
+    var state = peerConnection.iceConnectionState;
+    console.log("State Changed: " + state);
+    if (state == "disconnected") {
+      hangup();
+    }
+  }
 
   // RTCPeerConnection Callbacks
   function gotLocalDescription(offer) { // Caller
@@ -224,7 +232,7 @@ $(function() {
   console.log(lobby);
 
   lobby.init(key, currentUser);
-  lobby.available();
+  // lobby.available();
 
   start();
 
