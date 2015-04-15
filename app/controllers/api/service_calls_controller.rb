@@ -1,6 +1,7 @@
 class Api::ServiceCallsController < ActionController::Base
-
   respond_to :json
+
+  before_action :set_service_call, only: [:update]
 
   # POST /service_calls
   def create
@@ -22,7 +23,9 @@ class Api::ServiceCallsController < ActionController::Base
     end
 
     if available_id
-      call.update_attributes(:status => "connecting")
+      call.status = "connecting"
+      call.user_id = available_id
+      call.save
 
       json = {
         code: "AVAILABLE",
@@ -41,7 +44,10 @@ class Api::ServiceCallsController < ActionController::Base
 
   # PUT /service_calls/:id
   def update
+    puts "params: #{service_call_params}"
+    @service_call.update_attributes(:status => service_call_params[:status])
 
+    head :ok
   end
 
   private
@@ -51,5 +57,9 @@ class Api::ServiceCallsController < ActionController::Base
 
     def service_call_params
       params[:service_call].permit(:id, :room, :status)
+    end
+
+    def set_service_call
+      @service_call = ServiceCall.find(params[:id])
     end
 end

@@ -138,6 +138,9 @@ $(function() {
       channel.bind("client-offer", offerReceived); // Callee
       channel.bind("client-answer", answerReceived); // Caller
       channel.bind("client-icecandidate", iceCandidateReceived);
+      channel.bind("client-finished", function() {
+
+      });
     });
 
 
