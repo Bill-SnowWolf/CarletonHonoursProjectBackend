@@ -5,14 +5,19 @@ class PusherController < ApplicationController
     if params[:id]
       user_id = params[:id]
       user_name = params[:name]
+      join_time = params[:time]
     else
       user_id = "Client"
       user_name = "Client"
+      join_time = nil
     end
 
     response = Pusher[params[:channel_name]].authenticate(params[:socket_id],
       user_id: user_id,
-      user_info: { name: user_name })
+      user_info: { 
+        name: user_name,
+        join_time: join_time
+      })
 
     puts "#{response}"
     render json: response
