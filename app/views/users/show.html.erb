@@ -115,18 +115,18 @@ $(function() {
   var pusher;
   var channel; 
   var initialator = false;
-  var room_number = "<%= @user.id %>";
+  var user_id = "<%= @user.id %>";
 
     pusher = new Pusher($('#pusher_data').data().apiKey, {
       authEndpoint: $('#pusher_data').data().authEndpoint,
       auth: {
         params: {
-          room_number: room_number
+          room_number: user_id
         }
       }
     });
 
-    channel = pusher.subscribe('private-video-' + room_number);
+    channel = pusher.subscribe('private-video-' + user_id);
 
     channel.bind("pusher:subscription_succeeded", function() {
       console.log("Subscription Succeed");
@@ -138,14 +138,16 @@ $(function() {
 
   function start() {
     lobby.available();
-    startButton.disabled = true;    
+    // startButton.disabled = true;    
     navigator.getUserMedia({video:false, audio: true}, gotStream, function(error) {
       trace('navigator.getUserMedia error: ', error);
     });
-
     
-
-
+    $.ajax({
+      url: "/api/service_calls/available_user",
+      type: 'POST',
+      data: {'user_id': user_id}
+    });
   }
 
   function call() { // Caller

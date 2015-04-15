@@ -42,6 +42,25 @@ class Api::ServiceCallsController < ActionController::Base
     head :ok
   end
 
+  # POST /service_calls/available_user
+  def available_user
+    puts "New User: #{user_id}"
+    
+    call = ServiceCall.answer(user_id)
+    if call
+      json = {
+        code: "USER_AVAILABLE",
+        room: call.user_id
+      }
+      APNS.send_notification(call.device_token, 
+                             :alert => 'Representative Available! Please Confirm...', 
+                             :sound => 'default',
+                             :other => json)
+    end
+
+    head :ok
+  end
+
   private
     def device_token
       params[:device_token]
@@ -53,5 +72,9 @@ class Api::ServiceCallsController < ActionController::Base
 
     def set_service_call
       @service_call = ServiceCall.find(params[:id])
+    end
+
+    def user_id
+      params[:user_id]
     end
 end

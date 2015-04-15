@@ -15,4 +15,18 @@ class ServiceCall < ActiveRecord::Base
     return call
   end
 
+  # This user is able to pick up a call
+  # Find if there is any call waiting
+  def self.answer(user_id)
+    calls = ServiceCall.where(:status => 'waiting').order("created_at")
+    call = calls.first
+    if call
+      call.status = 'connecting'
+      call.user_id = user_id
+      call.save
+      return call
+    else
+      return nil
+    end
+  end
 end
