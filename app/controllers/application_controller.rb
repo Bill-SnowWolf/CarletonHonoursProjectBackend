@@ -15,7 +15,7 @@ class ApplicationController < ActionController::Base
   end
 
   def custom_authentication!
-    open_routes = ['admin/','active_admin/devise/sessions']
+    open_routes = ['admin/','active_admin/devise/sessions', 'pusher']
     authenticate_user! unless open_routes.any? { |path| 
       "/#{params[:controller]}/".include? path
     }

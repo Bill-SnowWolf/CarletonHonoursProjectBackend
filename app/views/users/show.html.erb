@@ -1,4 +1,216 @@
-<p id="notice"><%= notice %></p>
+<style>
+  button {
+    margin: 0 20px 0 0;
+    width: 85.9px;
+  }
 
-<%= link_to 'Edit', edit_user_path(@user) %> |
-<%= link_to 'Back', users_path %>
+  button#hangupButton {
+    margin: 0;
+  }
+
+  p.borderBelow {
+    margin: 0 0 1.5em 0;
+    padding: 0 0 1.5em 0;
+  }
+
+  video {
+    height: 225px;
+    margin: 0 0 20px 0;
+    vertical-align: top;
+    width: calc(50% - 13px);
+  }
+
+  video#localVideo {
+    margin: 0 20px 20px 0;
+  }
+
+  @media screen and (max-width: 400px) {
+
+    button {
+      width: 83px;
+    }
+
+    button {
+      margin: 0 11px 10px 0;
+    }
+
+    video {
+      height: 90px;
+      margin: 0 0 10px 0;
+      width: calc(50% - 7px);
+    }
+
+    video#localVideo {
+      margin: 0 10px 20px 0;
+    }
+
+  }
+</style>
+
+
+<div id="container">
+  <div data-api-key="<%= Pusher.key %>" data-auth-endpoint="<%= pusher_auth_video_path %>" id="pusher_data"></div>
+  <h1>You entered room <%= @room[:room_number] %> </h1>
+
+  <video id="localVideo" autoplay muted></video>
+  <video id="remoteVideo" autoplay></video>
+
+  <div>
+    <button id="startButton">Start</button>
+    <button id="callButton">Call</button>
+    <button id="hangupButton">Hang Up</button>
+  </div>
+
+</div>
+
+<script type="text/javascript">
+$(function() {
+  var guid = (function() {
+    function s4() {
+      return Math.floor((1 + Math.random()) * 0x10000)
+                 .toString(16)
+                 .substring(1);
+    }
+    return function() {
+      return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+             s4() + '-' + s4() + s4() + s4();
+    };
+  })();
+
+  // Initialize WebRTC functions based on Browser
+  var RTCPeerConnection = webkitRTCPeerConnection || mozRTCPeerConnection;
+  navigator.getUserMedia = navigator.getUserMedia ||
+      navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+
+  var localStream;
+  var peerConnection;
+
+  var localVideo = document.getElementById('localVideo');
+  var remoteVideo = document.getElementById('remoteVideo');
+
+  // Get Buttons and bind
+  var startButton = document.getElementById('startButton');
+  var callButton = document.getElementById('callButton');
+  var hangupButton = document.getElementById('hangupButton');
+  startButton.disabled = false;
+  callButton.disabled = true;
+  hangupButton.disabled = true;
+  startButton.onclick = start;
+  callButton.onclick = call;
+  hangupButton.onclick = hangup;
+
+
+  function gotStream(stream) {
+    localVideo.src = URL.createObjectURL(stream);
+    localStream = stream;   
+    callButton.disabled = false;
+
+    peerConnection = new RTCPeerConnection(null);   // 1. 
+    peerConnection.addStream(localStream);  // 2.
+    peerConnection.onicecandidate = gotLocalIceCandidate;
+    peerConnection.onaddstream = gotRemoteStream;
+  }
+
+  var pusher;
+  var channel; 
+  var initialator = false;
+  var room_number = "<%= @room[:room_number] %>";
+
+  function start() {
+    startButton.disabled = true;    
+    navigator.getUserMedia({video:false, audio: true}, gotStream, function(error) {
+      trace('navigator.getUserMedia error: ', error);
+    });
+
+    pusher = new Pusher($('#pusher_data').data().apiKey, {
+      authEndpoint: $('#pusher_data').data().authEndpoint,
+      auth: {
+        params: {
+          room_number: room_number
+        }
+      }
+    });
+
+    channel = pusher.subscribe('private-video-' + room_number);
+
+    channel.bind("pusher:subscription_succeeded", function() {
+      console.log("Subscription Succeed");
+      channel.bind("client-offer", offerReceived); // Callee
+      channel.bind("client-answer", answerReceived); // Caller
+      channel.bind("client-icecandidate", iceCandidateReceived);
+    });
+
+
+  }
+
+  function call() { // Caller
+    // callButton.disabled = true;
+    // hangupButton.disabled = false;
+    console.log('Starting call');    
+    peerConnection.createOffer(gotLocalDescription);  // 3.
+  }
+
+  function hangup() {
+    trace('Ending call');
+    localPC.hangup();
+    remotePC.hangup();
+    hangupButton.disabled = true;
+    callButton.disabled = false;
+  }
+
+  // Pushter Channel Callbacks
+  function offerReceived(offer) {   // Callee
+    console.log("Offer Received: " + offer.sdp);
+    peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    peerConnection.createAnswer(gotRemoteDescription);
+  }
+
+  function answerReceived(answer) { // Caller
+    console.log("Answer Received: " + answer.sdp);
+    peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+  }
+
+  function iceCandidateReceived(data) {
+    console.log("Ice Candidate Receivced: " + data.candidate);
+     var candidate = new RTCIceCandidate({
+      candidate: data.candidate,
+      sdpMLineIndex:  data.sdpMLineIndex
+    });
+    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));    
+  }
+
+
+  // RTCPeerConnection Callbacks
+  function gotLocalDescription(offer) { // Caller
+    // 4.
+    console.log("Got Local Description:" + offer.sdp);
+    peerConnection.setLocalDescription(offer);
+
+    channel.trigger("client-offer", offer); // 6.
+    // remotePC.offerReceived(offer);      
+  }
+
+  function gotRemoteDescription(answer){  // Callee
+    console.log("Got Remote Description.");
+    peerConnection.setLocalDescription(answer);
+    channel.trigger("client-answer", answer); // 7.
+    // localPC.answerReceived(answer);
+  }
+
+  function gotLocalIceCandidate(event){ // Caller        
+    console.log("Got Local IceCandidate " + event);
+    if (event.candidate) {
+      // remotePC.candidateReceived(event.candidate);
+      channel.trigger("client-icecandidate", event.candidate);
+    }      
+  }
+
+  function gotRemoteStream(event) {
+    remoteVideo.src = URL.createObjectURL(event.stream);
+    console.log('Received remote stream ' + event.stream);
+  }
+
+
+});
+
+</script>

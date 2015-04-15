@@ -10,6 +10,7 @@ Rails.application.routes.draw do
 
   # Pusher Authentication
   post '/pusher/auth' => 'pusher#auth'
+  post '/pusher/auth_video' => 'pusher#auth_video'
 
   root :to => "users#index"
   
