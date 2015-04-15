@@ -15,7 +15,7 @@ Rails.application.routes.draw do
   root :to => "users#index"
   
   namespace :api , defaults: {format: :json} do
-    resources :service_calls, only: [:create]
+    resources :service_calls, only: [:create, :update]
   end
     
   # The priority is based upon order of creation: first created -> highest priority.
