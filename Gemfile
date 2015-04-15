@@ -48,3 +48,6 @@ gem 'daemons'
 
 # Pusher
 gem 'pusher'
+
+# APNs
+gem 'apns'
