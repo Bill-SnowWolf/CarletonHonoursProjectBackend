@@ -114,7 +114,7 @@ $(function() {
   var pusher;
   var channel; 
   var initialator = false;
-  var room_number = "<%= @room[:room_number] %>";
+  var room_number = "<%= @user.id %>";
 
   function start() {
     startButton.disabled = true;    
@@ -210,6 +210,20 @@ $(function() {
     console.log('Received remote stream ' + event.stream);
   }
 
+  // Start Stream Automatically
+  var key = "<%= Pusher.key %>"
+  var currentUser = {
+    id: "<%= @user.id %>",
+    name: "<%= @user.name %>"
+    // time: new Date()
+  }
+  console.log(currentUser);
+  console.log(lobby);
+
+  lobby.init(key, currentUser);
+  lobby.available();
+
+  start();
 
 });
 

@@ -15,11 +15,11 @@
 
 <br>
 
-<% if @user.status == 'offline' %>
-<%= link_to 'Go Online', online_user_path(@user) %>
-<% else %>
-<%= link_to 'Go Offline', offline_user_path(@user) %>
-<% end %>
+<%# if @user.status == 'offline' %>
+<%= link_to 'Go Online', user_path(@user) %>
+<%# else %>
+<%#= link_to 'Go Offline', offline_user_path(@user) %>
+<%# end %>
 
 <%= link_to 'New User', new_user_path %>
 
@@ -30,14 +30,14 @@
 $(function() {
   var key = "<%= Pusher.key %>"
   var currentUser = {
-    id: "<%= @user.id %>",
-    name: "<%= @user.name %>",
-    time: new Date()
+    // id: "<%= @user.id %>",
+    // name: "<%= @user.name %>"
   }
   console.log(currentUser);
   console.log(lobby);
 
   lobby.init(key, currentUser);
+  lobby.check();
 
   // var pusher = new Pusher(key, {
   //   auth: {

@@ -1,5 +1,5 @@
 class PusherController < ApplicationController
-    protect_from_forgery except: [:auth, :auth_video]
+  protect_from_forgery except: [:auth, :auth_video]
 
   def auth
     if params[:id]
@@ -17,7 +17,7 @@ class PusherController < ApplicationController
       user_info: { 
         name: user_name,
         join_time: join_time
-      })
+    })
 
     puts "#{response}"
     render json: response
