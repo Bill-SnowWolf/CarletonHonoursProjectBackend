@@ -5,12 +5,6 @@ class Api::ServiceCallsController < ActionController::Base
 
   # POST /service_calls
   def create
-    call = ServiceCall.new
-    call.device_token = device_token
-    call.status = 'waiting'
-    call.save
-
-    # Pusher.trigger('presence-lobby', 'my-event', {:message => 'hello world'})
     response = Pusher.get('/channels/presence-lobby/users')
     puts "Response #{response[:users]}"
 
@@ -22,15 +16,13 @@ class Api::ServiceCallsController < ActionController::Base
       end
     end
 
-    if available_id
-      call.status = "connecting"
-      call.user_id = available_id
-      call.save
+    call = ServiceCall.new_call(device_token, available_id)
 
+    if call.user_id
       json = {
         code: "AVAILABLE",
         id: call.id,
-        room: available_id
+        room: call.user_id
       }
     else
       json = {
