@@ -66,9 +66,23 @@
 <script type="text/javascript">
 $(function() {
   // Initialize WebRTC functions based on Browser
-  var RTCPeerConnection = webkitRTCPeerConnection || mozRTCPeerConnection;
-  navigator.getUserMedia = navigator.getUserMedia ||
-      navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+  var RTCPeerConnection;
+
+
+  if (navigator.mozGetUserMedia) {
+    // Firefox
+    RTCPeerConnection = mozRTCPeerConnection;
+    navigator.getUserMedia = navigator.mozGetUserMedia;
+    
+    // The RTCSessionDescription object.
+    RTCSessionDescription = mozRTCSessionDescription;
+
+    // The RTCIceCandidate object.
+    RTCIceCandidate = mozRTCIceCandidate;
+  } else {
+    RTCPeerConnection = webkitRTCPeerConnection;
+    navigator.getUserMedia = webkitGetUserMedia;
+  }
 
   var localStream;
   var peerConnection;
@@ -82,7 +96,7 @@ $(function() {
 
   function createPeerConnection(stream) {
     var pcConfig = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
-    peerConnection = new RTCPeerConnection(null);   // 1. 
+    peerConnection = new RTCPeerConnection(pcConfig);   // 1. 
     peerConnection.addStream(stream);  // 2.
     peerConnection.onicecandidate = gotLocalIceCandidate;
     peerConnection.onaddstream = gotRemoteStream;

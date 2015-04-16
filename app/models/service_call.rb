@@ -11,6 +11,9 @@ class ServiceCall < ActiveRecord::Base
       call.status = "connecting"
       call.user_id = available_user_id
       call.save
+
+      # This representative is answering the call      
+      call.user.update_attributes(:status => "offline")
     end
     return call
   end
@@ -28,6 +31,10 @@ class ServiceCall < ActiveRecord::Base
       call.status = 'connecting'
       call.user_id = user_id
       call.save
+
+      # This representative is answering the call      
+      call.user.update_attributes(:status => "offline")
+      
       return call
     else
       return nil

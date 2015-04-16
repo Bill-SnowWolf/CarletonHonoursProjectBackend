@@ -6,15 +6,21 @@ class Api::ServiceCallsController < ActionController::Base
   # POST /service_calls
   def create
     response = Pusher.get('/channels/presence-lobby/users')
-    puts "Response #{response[:users]}"
-
-    available_id = nil
-    response[:users].each do |user|
-      if (user["id"] != "Client")
-        available_id = user["id"]
-        break
-      end
+    
+    users = response[:users].select do |user|
+      (user["id"] != "Client")
     end
+
+    users.map! do |user|
+      User.find(user["id"])
+    end
+
+    users.sort_by! do |user|
+      user.updated_at
+    end
+
+    available_id = users.first.id if users.first
+    puts "Response #{users}"
 
     call = ServiceCall.new_call(device_token, available_id)
 

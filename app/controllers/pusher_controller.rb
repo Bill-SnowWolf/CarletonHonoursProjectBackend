@@ -6,6 +6,11 @@ class PusherController < ApplicationController
       user_id = params[:id]
       user_name = params[:name]
       join_time = params[:time]
+
+      # Each time a representative subscribe to the presence channel
+      # We update the status in database, as well as the timestamp
+      user = User.find(params[:id])
+      user.update_attributes(:status => "online")
     else
       user_id = "Client"
       user_name = "Client"
