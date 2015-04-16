@@ -15,6 +15,10 @@ class ServiceCall < ActiveRecord::Base
     return call
   end
 
+  def self.waiting_count
+    calls = ServiceCall.where(:status => 'waiting').order("created_at").length
+  end
+
   # This user is able to pick up a call
   # Find if there is any call waiting
   def self.answer(user_id)

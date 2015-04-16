@@ -27,7 +27,8 @@ class Api::ServiceCallsController < ActionController::Base
     else
       json = {
         code: "BUSY",
-        id: call.id
+        id: call.id,
+        waiting_count: ServiceCall.waiting_count
       }
     end
 
@@ -44,8 +45,6 @@ class Api::ServiceCallsController < ActionController::Base
 
   # POST /service_calls/available_user
   def available_user
-    puts "New User: #{user_id}"
-    
     call = ServiceCall.answer(user_id)
     if call
       json = {

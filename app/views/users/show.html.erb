@@ -43,21 +43,21 @@
     video#localVideo {
       margin: 0 10px 20px 0;
     }
-
   }
 </style>
 
 
 <div id="container">
   <div data-api-key="<%= Pusher.key %>" data-auth-endpoint="<%= pusher_auth_video_path %>" id="pusher_data"></div>
-  <h1>You entered room <%= @room[:room_number] %> </h1>
+  <!-- <h1>You entered room <%= @room[:room_number] %> </h1> -->
 
-  <video id="localVideo" autoplay muted></video>
-  <video id="remoteVideo" autoplay></video>
+  <h1 id="statusLabel"></h1>
+
+  <audio id="remoteAudio" autoplay></audio>
 
   <div>
-    <button id="startButton">Start</button>
-    <button id="callButton">Call</button>
+    <!-- <button id="startButton">Start</button> -->
+    <!-- <button id="callButton">Call</button> -->
     <button id="hangupButton">Hang Up</button>
   </div>
 
@@ -65,18 +65,6 @@
 
 <script type="text/javascript">
 $(function() {
-  var guid = (function() {
-    function s4() {
-      return Math.floor((1 + Math.random()) * 0x10000)
-                 .toString(16)
-                 .substring(1);
-    }
-    return function() {
-      return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-             s4() + '-' + s4() + s4() + s4();
-    };
-  })();
-
   // Initialize WebRTC functions based on Browser
   var RTCPeerConnection = webkitRTCPeerConnection || mozRTCPeerConnection;
   navigator.getUserMedia = navigator.getUserMedia ||
@@ -85,31 +73,25 @@ $(function() {
   var localStream;
   var peerConnection;
 
-  var localVideo = document.getElementById('localVideo');
-  var remoteVideo = document.getElementById('remoteVideo');
-
-  // Get Buttons and bind
-  var startButton = document.getElementById('startButton');
-  var callButton = document.getElementById('callButton');
+  var remoteAudio = document.getElementById('remoteAudio');
   var hangupButton = document.getElementById('hangupButton');
-  startButton.disabled = false;
-  callButton.disabled = true;
+  var statusLabel = document.getElementById('statusLabel');
   hangupButton.disabled = true;
-  startButton.onclick = start;
-  callButton.onclick = call;
   hangupButton.onclick = hangup;
 
 
-  function gotStream(stream) {
-    localVideo.src = URL.createObjectURL(stream);
-    localStream = stream;   
-    callButton.disabled = false;
-
+  function createPeerConnection(stream) {
+    var pcConfig = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
     peerConnection = new RTCPeerConnection(null);   // 1. 
-    peerConnection.addStream(localStream);  // 2.
+    peerConnection.addStream(stream);  // 2.
     peerConnection.onicecandidate = gotLocalIceCandidate;
     peerConnection.onaddstream = gotRemoteStream;
-    peerConnection.oniceconnectionstatechange = iceConnectionStateChanged;    
+    peerConnection.oniceconnectionstatechange = iceConnectionStateChanged;  
+  }
+
+  function gotStream(stream) {
+    localStream = stream;   
+    createPeerConnection(stream);      
   }
 
   var pusher;
@@ -117,29 +99,37 @@ $(function() {
   var initialator = false;
   var user_id = "<%= @user.id %>";
 
-    pusher = new Pusher($('#pusher_data').data().apiKey, {
-      authEndpoint: $('#pusher_data').data().authEndpoint,
-      auth: {
-        params: {
-          room_number: user_id
-        }
+  pusher = new Pusher($('#pusher_data').data().apiKey, {
+    authEndpoint: $('#pusher_data').data().authEndpoint,
+    auth: {
+      params: {
+        room_number: user_id
       }
-    });
+    }
+  });
 
-    channel = pusher.subscribe('private-video-' + user_id);
+  channel = pusher.subscribe('private-video-' + user_id);
 
-    channel.bind("pusher:subscription_succeeded", function() {
-      console.log("Subscription Succeed");
-      channel.bind("client-offer", offerReceived); // Callee
-      channel.bind("client-answer", answerReceived); // Caller
-      channel.bind("client-icecandidate", iceCandidateReceived);
-    });
+  channel.bind("pusher:subscription_succeeded", function() {
+    channel.bind("client-offer", offerReceived); 
+    channel.bind("client-answer", answerReceived); 
+    channel.bind("client-icecandidate", iceCandidateReceived);
+  });
 
 
   function start() {
     lobby.available();
-    // startButton.disabled = true;    
-    navigator.getUserMedia({video:false, audio: true}, gotStream, function(error) {
+
+    updateStatus("Please wait for incoming call...");
+
+    hangupButton.disabled = true;    
+
+    var mediaConstraints = {
+      video: false, 
+      audio: true
+    };
+
+    navigator.getUserMedia(mediaConstraints, gotStream, function(error) {
       trace('navigator.getUserMedia error: ', error);
     });
     
@@ -157,8 +147,6 @@ $(function() {
 
   function hangup() {
     peerConnection.close();
-    // peerConnection = undefined;
-    // remoteVideo.src = undefined;
     start();
   }
 
@@ -189,7 +177,11 @@ $(function() {
     var state = peerConnection.iceConnectionState;
     console.log("State Changed: " + state);
     if (state == "disconnected") {
+      updateStatus("Client disconnected.");
       hangup();
+    } else if (state == "connected") {
+      updateStatus("Communication started.");
+      hangupButton.disabled = false;
     }
   }
 
@@ -207,19 +199,17 @@ $(function() {
     console.log("Got Remote Description.");
     peerConnection.setLocalDescription(answer);
     channel.trigger("client-answer", answer); // 7.
-    // localPC.answerReceived(answer);
   }
 
   function gotLocalIceCandidate(event){ // Caller        
     console.log("Got Local IceCandidate " + event);
     if (event.candidate) {
-      // remotePC.candidateReceived(event.candidate);
       channel.trigger("client-icecandidate", event.candidate);
     }      
   }
 
   function gotRemoteStream(event) {
-    remoteVideo.src = URL.createObjectURL(event.stream);
+    remoteAudio.src = URL.createObjectURL(event.stream);
     console.log('Received remote stream ' + event.stream);
   }
 
@@ -234,9 +224,11 @@ $(function() {
   console.log(lobby);
 
   lobby.init(key, currentUser);
-  // lobby.available();
-
   start();
+
+  function updateStatus(status) {
+    statusLabel.innerHTML = status;
+  }
 
 });
 
