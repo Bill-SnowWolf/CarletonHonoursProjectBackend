@@ -81,7 +81,7 @@ $(function() {
     RTCIceCandidate = mozRTCIceCandidate;
   } else {
     RTCPeerConnection = webkitRTCPeerConnection;
-    navigator.getUserMedia = webkitGetUserMedia;
+    navigator.getUserMedia = navigator.webkitGetUserMedia;
   }
 
   var localStream;
