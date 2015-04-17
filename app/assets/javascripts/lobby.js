@@ -30,8 +30,8 @@ var lobby = {};
             removeMemberFromUserTable(member);
         });
 
-        channel.bind('client-request-service', function(e) {
-    
+        channel.bind('client-reset-user', function(e) {
+            console.log("reset user " + e);            
         });
 
         channel.bind('pusher:subscription_succeeded', function() {
@@ -77,8 +77,10 @@ var lobby = {};
     };
 
     this.busy = function() {
-        pusher.unsubscribe('presence-lobby');
-        channel = null;
+        if (channel != null) {
+            pusher.unsubscribe('presence-lobby');
+            channel = null;            
+        }
     };
     
     var addMemberToLobby = function(member) {

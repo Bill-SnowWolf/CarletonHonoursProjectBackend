@@ -122,12 +122,14 @@ $(function() {
     }
   });
 
-  channel = pusher.subscribe('private-video-' + user_id);
+  channel = pusher.subscribe('private-audio-' + user_id);
 
   channel.bind("pusher:subscription_succeeded", function() {
+    channel.bind("client-connecting", connectingToClient);
     channel.bind("client-offer", offerReceived); 
     channel.bind("client-answer", answerReceived); 
     channel.bind("client-icecandidate", iceCandidateReceived);
+    channel.bind("client-reset", resetUser);
   });
 
 
@@ -166,9 +168,8 @@ $(function() {
 
   // Pushter Channel Callbacks
   function offerReceived(offer) {   // Callee
-    lobby.busy();
-
     console.log("Offer Received: " + offer.sdp);
+    lobby.busy();
     peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
     peerConnection.createAnswer(gotRemoteDescription);
   }
@@ -227,12 +228,20 @@ $(function() {
     console.log('Received remote stream ' + event.stream);
   }
 
+  function connectingToClient() {
+    updateStatus("You are connecting to a customer...");
+    lobby.busy();
+  }
+
+  function resetUser() {
+    start();
+  }
+
   // Start Stream Automatically
   var key = "<%= Pusher.key %>"
   var currentUser = {
     id: "<%= @user.id %>",
     name: "<%= @user.name %>"
-    // time: new Date()
   }
   console.log(currentUser);
   console.log(lobby);

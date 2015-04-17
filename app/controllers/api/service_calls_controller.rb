@@ -51,7 +51,9 @@ class Api::ServiceCallsController < ActionController::Base
 
   # POST /service_calls/available_user
   def available_user
-    call = ServiceCall.answer(user_id)
+    user = User.find(user_id)
+    call = user.answer_call
+    # call = ServiceCall.answer(user_id)
     if call
       json = {
         code: "USER_AVAILABLE",

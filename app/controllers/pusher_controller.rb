@@ -29,7 +29,7 @@ class PusherController < ApplicationController
   end
 
   def auth_video
-    channel = "private-video-#{params[:room_number]}"
+    channel = "private-audio-#{params[:room_number]}"
 
     response = Pusher[channel].authenticate(params[:socket_id])
 

@@ -51,3 +51,8 @@ gem 'pusher'
 
 # APNs
 gem 'apns'
+
+# Delayed Job
+gem 'delayed_job'
+gem 'delayed_job_active_record'
+gem 'daemons'
