@@ -31,14 +31,18 @@ class User < ActiveRecord::Base
     self.delay(run_at: 15.seconds.from_now).check_call_status(call)
   end
 
-  def check_call_status(call)
-    puts "Check Call Status #{call.status}"
-
+  def check_call_status(call)    
     if call.status == "connecting"
-      # No response or there is error during signalling
-      call.status = 'waiting'
-      call.user = nil
-      call.save
+      # No response or there is error during signalling      
+      if call.attempt_count < 5        
+        call.status = 'waiting'
+        call.attempt_count += 1
+        call.user = nil
+        call.save
+      else
+        call.status = 'discarded'
+        call.save
+      end
 
       self.status = 'offline'
       Pusher.trigger("private-audio-#{self.id}", 'client-reset', self.id)

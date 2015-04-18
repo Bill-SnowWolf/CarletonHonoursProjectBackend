@@ -13,17 +13,6 @@
     padding: 0 0 1.5em 0;
   }
 
-  video {
-    height: 225px;
-    margin: 0 0 20px 0;
-    vertical-align: top;
-    width: calc(50% - 13px);
-  }
-
-  video#localVideo {
-    margin: 0 20px 20px 0;
-  }
-
   @media screen and (max-width: 400px) {
 
     button {
@@ -32,16 +21,6 @@
 
     button {
       margin: 0 11px 10px 0;
-    }
-
-    video {
-      height: 90px;
-      margin: 0 0 10px 0;
-      width: calc(50% - 7px);
-    }
-
-    video#localVideo {
-      margin: 0 10px 20px 0;
     }
   }
 </style>
@@ -53,11 +32,17 @@
 
   <h1 id="statusLabel"></h1>
 
+  <label>Customer Information:</label><hr>
+  <label>Name: </label><label id="nameLabel"></label><br>
+  <label>Phone: </label><label id="phoneLabel"></label><br>
+  <label>Email: </label><label id="emailLabel"></label><br>
+  <label>Comments: </label><label id="commentsLabel"></label><hr>
+
   <audio id="remoteAudio" autoplay></audio>
 
   <div>
     <!-- <button id="startButton">Start</button> -->
-    <!-- <button id="callButton">Call</button> -->
+    <button id="offlineButton">Offline</button>
     <button id="hangupButton">Hang Up</button>
   </div>
 
@@ -89,9 +74,15 @@ $(function() {
 
   var remoteAudio = document.getElementById('remoteAudio');
   var hangupButton = document.getElementById('hangupButton');
+  var offlineButton = document.getElementById('offlineButton');
   var statusLabel = document.getElementById('statusLabel');
+  var nameLabel = document.getElementById('nameLabel');
+  var phoneLabel = document.getElementById('phoneLabel');
+  var emailLabel = document.getElementById('emailLabel');
+  var commentsLabel = document.getElementById('commentsLabel');
   hangupButton.disabled = true;
   hangupButton.onclick = hangup;
+  offlineButton.onclick = offline;
 
 
   function createPeerConnection(stream) {
@@ -135,10 +126,9 @@ $(function() {
 
   function start() {
     lobby.available();
-
     updateStatus("Please wait for incoming call...");
-
     hangupButton.disabled = true;    
+    clearCustomerInfo();
 
     var mediaConstraints = {
       video: false, 
@@ -158,12 +148,23 @@ $(function() {
 
   function call() { // Caller
     console.log('Starting call');    
-    peerConnection.createOffer(gotLocalDescription);  // 3.
+    peerConnection.createOffer(gotLocalDescription);  
   }
 
   function hangup() {
-    peerConnection.close();
+    if (peerConnection)
+      peerConnection.close();
+    peerConnection = null;
     start();
+  }
+
+  function offline() {
+    if (peerConnection)
+      peerConnection.close();
+    peerConnection = null;
+    lobby.busy();
+
+    location.href = "http://localhost:3000/users";
   }
 
   // Pushter Channel Callbacks
@@ -202,12 +203,10 @@ $(function() {
 
   // RTCPeerConnection Callbacks
   function gotLocalDescription(offer) { // Caller
-    // 4.
     console.log("Got Local Description:" + offer.sdp);
     peerConnection.setLocalDescription(offer);
 
     channel.trigger("client-offer", offer); // 6.
-    // remotePC.offerReceived(offer);      
   }
 
   function gotRemoteDescription(answer){  // Callee
@@ -228,14 +227,36 @@ $(function() {
     console.log('Received remote stream ' + event.stream);
   }
 
-  function connectingToClient() {
+  function connectingToClient(data) {
     updateStatus("You are connecting to a customer...");
-    lobby.busy();
+    console.log(data);
+    lobby.busy();    
+
+    updateCustomerInfo(data);
   }
 
   function resetUser() {
     start();
   }
+
+  function updateStatus(status) {
+    statusLabel.innerHTML = status;
+  }
+
+  function updateCustomerInfo(data) {
+    nameLabel.innerHTML = data.name;
+    phoneLabel.innerHTML = data.phone;
+    emailLabel.innerHTML = data.email;
+    commentsLabel.innerHTML = data.comments;
+  }
+
+  function clearCustomerInfo() {
+    nameLabel.innerHTML = "";  
+    phoneLabel.innerHTML = "";
+    emailLabel.innerHTML = "";
+    commentsLabel.innerHTML = "";
+  }
+
 
   // Start Stream Automatically
   var key = "<%= Pusher.key %>"
@@ -248,11 +269,6 @@ $(function() {
 
   lobby.init(key, currentUser);
   start();
-
-  function updateStatus(status) {
-    statusLabel.innerHTML = status;
-  }
-
 });
 
 </script>

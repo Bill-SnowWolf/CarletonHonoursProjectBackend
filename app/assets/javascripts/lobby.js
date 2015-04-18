@@ -19,7 +19,7 @@ var lobby = {};
 
         channel.bind('pusher:member_added', function(member) {
             console.log(member.id + " " + member.info.name + " joined lobby at " + member.info.join_time + ".");
-            if (addMemberToLobby(member)) {
+            if (addMemberToLobby(member) && member.id != "Client") {
                 addMemberToUserTable(member);
             }
         });
@@ -41,7 +41,7 @@ var lobby = {};
 
             channel.members.each(function(member) {
                 console.log(member.id + " " + member.info.name + " is in this lobby.");      
-                if (addMemberToLobby(member)) {
+                if (addMemberToLobby(member) && member.id != "Client") {
                     addMemberToUserTable(member);
                 }
             });    

@@ -1,10 +1,13 @@
 class ServiceCall < ActiveRecord::Base
   belongs_to :user
 
-  def self.new_call(token, available_user_id) 
+  def self.new_call(token, customer_data, available_user_id) 
     call = ServiceCall.new
     call.device_token = token
     call.status = 'waiting'
+    call.name = customer_data[:name]
+    call.email = customer_data[:email]
+    call.phone = customer_data[:phone]
     call.save
 
     if available_user_id
@@ -23,4 +26,5 @@ class ServiceCall < ActiveRecord::Base
   def self.waiting_count
     calls = ServiceCall.where(:status => 'waiting').order("created_at").length
   end
+
 end

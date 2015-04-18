@@ -22,7 +22,7 @@ class Api::ServiceCallsController < ActionController::Base
     available_id = users.first.id if users.first
     puts "Response #{users}"
 
-    call = ServiceCall.new_call(device_token, available_id)
+    call = ServiceCall.new_call(device_token, customer_data_params, available_id)
 
     if call.user_id
       json = {
@@ -73,8 +73,12 @@ class Api::ServiceCallsController < ActionController::Base
       params[:device_token]
     end
 
+    def customer_data_params
+      params[:customer_data].permit(:name, :phone, :email)
+    end
+
     def service_call_params
-      params[:service_call].permit(:id, :room, :status)
+      params[:service_call].permit(:id, :status)
     end
 
     def set_service_call

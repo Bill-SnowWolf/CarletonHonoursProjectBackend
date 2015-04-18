@@ -14,6 +14,8 @@ class UsersController < ApplicationController
     @room = {
       room_number: user_id
     }
+
+    @connected_call = @user.service_calls.where(:status => "connected").first
   end
 
   # GET /users/new
